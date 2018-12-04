@@ -82,19 +82,12 @@ int main()
 	const char* vertexShaderSource =
 		"#version 410 core\n"
 		"layout(location = 0) in vec3 aPos;"
-		"layout (location = 1) in vec3 aTexCoord;"
-		"layout (location = 2) in vec3 aNormal;"
-		"out vec3 ourPos;"
-		"out vec3 TexCoord;"
-		"out vec3 ourNormal;"
-		"uniform mat4 ModelMatrix;"
-		"uniform mat4 ViewMatrix;"
+		"layout (location = 1) in vec3 aColor;"
+		"out vec3 color;"
 		"uniform mat4 ProjectionMatrix;"
 		"void main() {"
-		"   ourPos = vec4(ModelMatrix * vec4(aPos, 1.f)).xyz;"
-		"   TexCoord = aTexCoord;"
-		"   ourNormal = mat3(ModelMatrix) * aNormal;"
-		"   gl_Position = ProjectionMatrix * ViewMatrix * ModelMatrix * vec4(aPos, 1.f);"
+		"   color = aColor;"
+		"	gl_Position = ProjectionMatrix * vec4(aPos, 1.f);"
 		"}";
 
 	unsigned int vertexShader;
@@ -112,30 +105,10 @@ int main()
 
 	const char* fragmentShaderSource =
 		"#version 410 core\n"
-		"in vec3 ourPos;"
-		"in vec3 TexCoord;"
-		"in vec3 ourNormal;"
-		"out vec4 FragColor;"
-		"uniform sampler2D texture1;"
-		"uniform sampler2D texture2;"
-		"uniform vec3 lightPos0;"
-		"uniform vec3 cameraPos;"
-		"uniform vec3 kambiente;"
-		"uniform vec3 kdifusao;"
-		"uniform vec3 kespecular;"
-		"uniform vec3 shiny;"
+		"in vec3 color;"
+		"out vec4 fragColor;"
 		"void main()	{"
-		"   vec3 ambientLight = kambiente;"			//ambiente
-		"   vec3 posToLightDirVec = normalize(lightPos0 - ourPos);"	//difusa
-		"   vec3 diffuseColor = kdifusao;"
-		"   float diffuse = clamp(dot(posToLightDirVec, ourNormal), 0, 1);"
-		"   vec3 diffuseFinal = diffuseColor * diffuse;"
-		"   vec3 lightToPosDirVec = normalize(ourPos - lightPos0);"		//especular
-		"   vec3 reflectDirVec = normalize(reflect(lightToPosDirVec, normalize(ourNormal)));"
-		"   vec3 posToViewDirVec = normalize(cameraPos - ourPos );"
-		"   float specularConstant = pow(max(dot(posToViewDirVec, reflectDirVec), 0), shiny.x);"
-		"   vec3 specularFinal = kespecular * specularConstant;"
-		"   FragColor =vec4(TexCoord ,1.0f) * (vec4(ambientLight, 1.f) + vec4(diffuseFinal, 1.0f) + vec4(specularFinal, 1.f));"	//saida do resultado
+		"   fragColor = vec4(color, 1.0f);"	//saida do resultado
 		"}";
 
 	unsigned int fragmentShader;
@@ -160,56 +133,18 @@ int main()
 	
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
-	glGenVertexArrays(2, &VAO2);
-	glGenBuffers(2, &VBO2);
+	glGenVertexArrays(1, &VAO2);
+	glGenBuffers(1, &VBO2);
 	// bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
 	
-
-	glm::vec3 position(0.f);
-	glm::vec3 rotation(0.f);
-	glm::vec3 scale(1.f);
-
-	glm::mat4 ModelMatrix(1.f);
-	ModelMatrix = glm::translate(ModelMatrix, position);
-	ModelMatrix = glm::rotate(ModelMatrix, glm::radians(rotation.x), glm::vec3(1.f, 0.f, 0.f));
-	ModelMatrix = glm::rotate(ModelMatrix, glm::radians(rotation.y), glm::vec3(0.f, 1.f, 0.f));
-	ModelMatrix = glm::rotate(ModelMatrix, glm::radians(rotation.z), glm::vec3(0.f, 0.f, 1.f));
-	ModelMatrix = glm::scale(ModelMatrix, scale);
-
-	glm::vec3 camPosition(0.f, 0.f, 1.f);
-	glm::vec3 worldUp(0.f, 1.f, 0.f);
-	glm::vec3 camFront(0.f, 0.f, -1.f);
-
-	glm::mat4 ViewMatrix(1.f);
-	ViewMatrix = glm::lookAt(camPosition, camPosition + camFront, worldUp);
-
-	float fov = 90.f;
-	float nearPlane = 0.1f;
-	float farPlane = 1000.f;
 	glm::mat4 ProjectionMatrix(1.f);
+
+	ProjectionMatrix = glm::ortho(0.0f, 860.0f, 640.0f, 0.0f);
+	glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "ProjectionMatrix"), 1, GL_FALSE, glm::value_ptr(ProjectionMatrix));
 
 	//ProjectionMatrix = glm::perspective(glm::radians(fov), static_cast<float>(framebufferWidth) / framebufferHeight, nearPlane, farPlane);
 
-	ProjectionMatrix = glm::ortho(0.0f, 860.0f, 640.0f, 0.0f);
-
-	glm::vec3 lightPos0(0.0f, 0.f, 1.f);
-	glm::vec3 kambiente(0.5, 0.5, 0.5);
-	glm::vec3 kdifusao(1.0, 1.0, 1.0);
-	glm::vec3 kespecular(1.0, 1.0, 1.0);
-	glm::vec3 shiny(300.1000, 0.0, 0.0);
-
 	glUseProgram(shaderProgram);
-
-	glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "ModelMatrix"), 1, GL_FALSE, glm::value_ptr(ModelMatrix));
-	glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "ViewMatrix"), 1, GL_FALSE, glm::value_ptr(ViewMatrix));
-	glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "ProjectionMatrix"), 1, GL_FALSE, glm::value_ptr(ProjectionMatrix));
-
-	glUniform3fv(glGetUniformLocation(shaderProgram, "lightPos0"), 1, glm::value_ptr(lightPos0));
-	glUniform3fv(glGetUniformLocation(shaderProgram, "kambiente"), 1, glm::value_ptr(kambiente));
-	glUniform3fv(glGetUniformLocation(shaderProgram, "kdifusao"), 1, glm::value_ptr(kdifusao));
-	glUniform3fv(glGetUniformLocation(shaderProgram, "kespecular"), 1, glm::value_ptr(kespecular));
-	glUniform3fv(glGetUniformLocation(shaderProgram, "cameraPos"), 1, glm::value_ptr(camPosition));
-	glUniform3fv(glGetUniformLocation(shaderProgram, "shiny"), 1, glm::value_ptr(shiny));
 
 	glUseProgram(0);
 
@@ -220,7 +155,7 @@ int main()
 		// input
 		// -----
 		processInput(window);
-		processInput(window, position, rotation, scale);
+		//processInput(window, position, rotation, scale);
 
 		// render
 		// ------
@@ -231,31 +166,16 @@ int main()
 		//ourShader->use();
 		glUseProgram(shaderProgram);
 
-		ModelMatrix = glm::mat4(1.f);
-		ModelMatrix = glm::translate(ModelMatrix, position);
-		ModelMatrix = glm::rotate(ModelMatrix, glm::radians(rotation.x), glm::vec3(1.f, 0.f, 0.f));
-		ModelMatrix = glm::rotate(ModelMatrix, glm::radians(rotation.y), glm::vec3(0.f, 1.f, 0.f));
-		ModelMatrix = glm::rotate(ModelMatrix, glm::radians(rotation.z), glm::vec3(0.f, 0.f, 1.f));
-		ModelMatrix = glm::scale(ModelMatrix, scale);
-
-		glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "ModelMatrix"), 1, GL_FALSE, glm::value_ptr(ModelMatrix));
-
-		glfwGetFramebufferSize(window, &framebufferWidth, &framebufferHeight);
-
-		ProjectionMatrix = glm::mat4(1.f);
-		ProjectionMatrix = glm::perspective(glm::radians(fov), static_cast<float>(framebufferWidth) / framebufferHeight, nearPlane, farPlane);
-
-		glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "ProjectionMatrix"), 1, GL_FALSE, glm::value_ptr(ProjectionMatrix));
 				
 		if (des) {
 			glBindVertexArray(VAO);
 			glPointSize(15);
-			glDrawArrays(GL_POINTS, 0, vert->size() / 9);
+			glDrawArrays(GL_POINTS, 0, vert->size() / 6);
 		}
 		if (fim) {
 			//cout << "teste";
 			glBindVertexArray(VAO2);
-			glDrawArrays(GL_LINE_STRIP, 0, curva->size() / 9);
+			glDrawArrays(GL_LINE_STRIP, 0, curva->size() / 6);
 			//glDrawArrays();
 		}
 		
@@ -299,36 +219,6 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 
 void processInput(GLFWwindow *window, glm::vec3& position, glm::vec3& rotation, glm::vec3& scale)
 {
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-		position.z += 0.01f;
-	}
-	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-		position.z -= 0.01f;
-	}
-	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-		position.x += 0.01f;
-	}
-	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-		position.x -= 0.01f;
-	}
-	if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
-		rotation.y -= 1.f;
-	}
-	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
-		rotation.y += 1.f;
-	}
-	if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) {
-		rotation.x -= 1.f;
-	}
-	if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) {
-		rotation.x += 1.f;
-	}
-	if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS) {
-		scale += 0.1f;
-	}
-	if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS) {
-		scale -= 0.1f;
-	}
 	if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) {
 		fim = TRUE;
 		gerarCurva();
@@ -341,15 +231,9 @@ void processInput(GLFWwindow *window, glm::vec3& position, glm::vec3& rotation, 
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(GLfloat), (GLvoid*)0);
 		glEnableVertexAttribArray(0);
 		// color attribute
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
 		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(GLfloat), (GLvoid*)(6 * sizeof(GLfloat)));
-		glEnableVertexAttribArray(2);
 
-
-
-		// You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
-		// VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
 		//glBindVertexArray(0);
 	}
 }
@@ -387,12 +271,14 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
 		double xpos, ypos;
 		glfwGetCursorPos(window, &xpos, &ypos);
+		//cout << xpos << " " << ypos;
 		
-		conversao(xpos, ypos);
+		//conversao(xpos, ypos);
 		
 		float x = xpos;
 		float y = ypos;
-	
+		
+		cout << x << " " << y;
 
 		vert->push_back(x);
 		vert->push_back(y);
@@ -400,24 +286,19 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 		vert->push_back(1.0);
 		vert->push_back(1.0);
 		vert->push_back(1.0);
-		vert->push_back(0.0);
-		vert->push_back(0.0);
-		vert->push_back(1.0);
 		
 		des = true;
 		glBindVertexArray(VAO);
 
 		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*vert->size(), &vert->at(0), GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*vert->size(), vert->data(), GL_STATIC_DRAW);
 
 		// position attribute
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
 		glEnableVertexAttribArray(0);
 		// color attribute
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)(3 * sizeof(float)));
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
 		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)(6 * sizeof(float)));
-		glEnableVertexAttribArray(2);
 
 		//glBindVertexArray(0);
 	}
@@ -459,9 +340,6 @@ void gerarCurva() {
 			curva->push_back(0.0); 
 			curva->push_back(1.0);
 			curva->push_back(1.0);
-			curva->push_back(1.0);
-			curva->push_back(0.0);
-			curva->push_back(0.0);
 			curva->push_back(1.0);
 		}
 	}
