@@ -135,11 +135,13 @@ int main()
 	glGenBuffers(1, &VBO);
 	glGenVertexArrays(1, &VAO2);
 	glGenBuffers(1, &VBO2);
+
+	glUseProgram(shaderProgram);
 	// bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
 	
 	glm::mat4 ProjectionMatrix(1.f);
 
-	ProjectionMatrix = glm::ortho(0.0f, 860.0f, 640.0f, 0.0f);
+	ProjectionMatrix = glm::ortho(0.0f, 860.0f, 640.0f, 0.0f, -1.0f, 1.0f);
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "ProjectionMatrix"), 1, GL_FALSE, glm::value_ptr(ProjectionMatrix));
 
 	//ProjectionMatrix = glm::perspective(glm::radians(fov), static_cast<float>(framebufferWidth) / framebufferHeight, nearPlane, farPlane);
@@ -210,6 +212,23 @@ void processInput(GLFWwindow *window)
 {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
+	if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) {
+		fim = TRUE;
+		gerarCurva();
+		glBindVertexArray(VAO2);
+
+		glBindBuffer(GL_ARRAY_BUFFER, VBO2);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*curva->size(), curva->data(), GL_STATIC_DRAW);
+
+		// position attribute
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
+		glEnableVertexAttribArray(0);
+		// color attribute
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+		glEnableVertexAttribArray(1);
+
+		//glBindVertexArray(0);
+	}
 }
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
@@ -219,23 +238,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 
 void processInput(GLFWwindow *window, glm::vec3& position, glm::vec3& rotation, glm::vec3& scale)
 {
-	if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) {
-		fim = TRUE;
-		gerarCurva();
-		glBindVertexArray(VAO2);
-
-		glBindBuffer(GL_ARRAY_BUFFER, VBO2);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*curva->size(), &curva->at(0), GL_STATIC_DRAW);
-
-		// position attribute
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(GLfloat), (GLvoid*)0);
-		glEnableVertexAttribArray(0);
-		// color attribute
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
-		glEnableVertexAttribArray(1);
-
-		//glBindVertexArray(0);
-	}
+	
 }
 
 void conversao(double &x, double &y) {
@@ -318,7 +321,7 @@ void gerarCurva() {
 	aux->push_back(vert->at(0));
 	aux->push_back(vert->at(1));
 	aux->push_back(vert->at(2));
-	for (int i = 0; i < ((aux->size()/3) - 3); i++)  {
+	for (int i = 0; i < ((aux->size()/6) - 4); i++)  {
 		for (float t = 0; t <= 1; t += 0.05) {
 			GLfloat x = (((-1 * pow(t, 3) + 3 * pow(t, 2) - 3 * t + 1)*aux->at(3 * i) +
 				(3 * pow(t, 3) - 6 * pow(t, 2) + 0 * t + 4)*aux->at(3 * (i + 1)) +
