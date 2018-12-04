@@ -22,7 +22,6 @@ using namespace std;
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
-void processInput(GLFWwindow *window, glm::vec3& position, glm::vec3& rotation, glm::vec3& scale);
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 void conversao(double &x, double &y);
 void gerarCurva();
@@ -34,8 +33,9 @@ boolean des = false;
 boolean fim = false;
 vector<GLfloat>* vert = new vector<GLfloat>();
 vector<GLint>* indi = new vector<GLint>();
+vector<GLint>* indic = new vector<GLint>();
 vector<GLint>* curva = new vector<GLint>();
-unsigned int VBO, VAO, VBO2, VAO2;
+unsigned int VBO1, VAO1, VBO2, VAO2, VBO3, VBO4;
 
 int main()
 {
@@ -82,12 +82,12 @@ int main()
 	const char* vertexShaderSource =
 		"#version 410 core\n"
 		"layout(location = 0) in vec3 aPos;"
-		"layout (location = 1) in vec3 aColor;"
+		"layout(location = 1) in vec3 aColor;"
 		"out vec3 color;"
 		"uniform mat4 ProjectionMatrix;"
 		"void main() {"
 		"   color = aColor;"
-		"	gl_Position = ProjectionMatrix * vec4(aPos, 1.f);"
+		"	gl_Position = ProjectionMatrix * vec4(aPos, 1.0f);"
 		"}";
 
 	unsigned int vertexShader;
@@ -131,39 +131,36 @@ int main()
 
 
 	
-	glGenVertexArrays(1, &VAO);
-	glGenBuffers(1, &VBO);
-
-	glBindVertexArray(VAO);
-
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glGenVertexArrays(1, &VAO1);
+	glBindVertexArray(VAO1);
+	glGenBuffers(1, &VBO1);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO1);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*vert->size(), vert->data(), GL_STATIC_DRAW);
-
-	// position attribute
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 	
 	// color attribute
+	glGenBuffers(1, &VBO3);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO3);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*indi->size(), indi->data(), GL_STATIC_DRAW);
 	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 	
 
 	glGenVertexArrays(1, &VAO2);
-	glGenBuffers(1, &VBO2);
-
 	glBindVertexArray(VAO2);
-
+	glGenBuffers(1, &VBO2);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO2);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*curva->size(), curva->data(), GL_STATIC_DRAW);
-
-	// position attribute
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 	
 	// color attribute
+	glGenBuffers(1, &VBO4);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO4);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*indic->size(), indic->data(), GL_STATIC_DRAW);
 	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
-	
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 
 	//glBindVertexArray(0);
 
@@ -201,15 +198,14 @@ int main()
 
 				
 		if (des) {
-			glBindVertexArray(VAO);
+			glBindVertexArray(VAO1);
 			glPointSize(15);
-			glDrawArrays(GL_POINTS, 0, vert->size() / 6);
+			glDrawArrays(GL_POINTS, 0, vert->size()/3);
 		}
 		if (fim) {
 			//cout << "teste";
 			glBindVertexArray(VAO2);
-			glDrawArrays(GL_LINE_STRIP, 0, curva->size() / 6);
-			//glDrawArrays();
+			glDrawArrays(GL_LINE_STRIP, 0, curva->size()/3);
 		}
 		
 		
@@ -218,15 +214,15 @@ int main()
 		// -------------------------------------------------------------------------------
 		glfwSwapBuffers(window);
 		glfwPollEvents();
-		glBindVertexArray(0);
-		glUseProgram(0);
+		//glBindVertexArray(0);
+		//glUseProgram(0);
 		
 	}
 
 	// optional: de-allocate all resources once they've outlived their purpose:
 	// ------------------------------------------------------------------------
-	glDeleteVertexArrays(1, &VAO);
-	glDeleteBuffers(1, &VBO);
+	glDeleteVertexArrays(1, &VAO1);
+	glDeleteBuffers(1, &VBO1);
 	glDeleteVertexArrays(1, &VAO2);
 	glDeleteBuffers(1, &VBO2);
 
@@ -244,12 +240,7 @@ void processInput(GLFWwindow *window)
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
 	if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) {
-		fim = TRUE;
-		gerarCurva();
-		glBindVertexArray(VAO2);
-
-		glBindBuffer(GL_ARRAY_BUFFER, VBO2);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*curva->size(), curva->data(), GL_STATIC_DRAW);
+		
 	}
 }
 
@@ -299,20 +290,28 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 		float x = xpos;
 		float y = ypos;
 		
-		cout << x << " " << y;
+		//cout << x << " " << y;
 
 		vert->push_back(x);
 		vert->push_back(y);
-		vert->push_back(0.0);
 		vert->push_back(1.0);
-		vert->push_back(1.0);
-		vert->push_back(1.0);
+
+		indi->push_back(0.5);
+		indi->push_back(0.5);
+		indi->push_back(0.5);
 		
 		des = true;
+
+		if (vert->size()/3 >= 4) {
+			fim = TRUE;
+			gerarCurva();
+		}
 		
-		glBindVertexArray(VAO);
-		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		glBindVertexArray(VAO1);
+		glBindBuffer(GL_ARRAY_BUFFER, VBO1);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*vert->size(), vert->data(), GL_STATIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, VBO3);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*indi->size(), indi->data(), GL_STATIC_DRAW);
 		//glBindVertexArray(0);
 	}
 
@@ -321,24 +320,33 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 void gerarCurva() {
 	vector<float>* aux = new vector<float>();
 	//cout << vert->at(0) << " " << vert->at(18);
-	for (int i = 0; i < vert->size()/9; i++) {
-		aux->push_back(vert->at(9 * i + 0));
-		aux->push_back(vert->at(9 * i + 1));
-		aux->push_back(vert->at(9 * i + 2));
+	for (int i = 0; i < vert->size()/3; i++) {
+		aux->push_back(vert->at(3 * i + 0));
+		aux->push_back(vert->at(3 * i + 1));
+		aux->push_back(vert->at(3 * i + 2));
+		//cout << " "<<i << "/";
 	}
 	//cout << aux->at(0) << " " << aux->at(6) << " ";
 
 	aux->push_back(vert->at(0));
 	aux->push_back(vert->at(1));
 	aux->push_back(vert->at(2));
-	for (int i = 0; i < (aux->size() - 4); i++)  {
+	aux->push_back(vert->at(3));
+	aux->push_back(vert->at(4));
+	aux->push_back(vert->at(5));
+	aux->push_back(vert->at(6));
+	aux->push_back(vert->at(7));
+	aux->push_back(vert->at(8));
+	//cout << " "<<aux->size() << "/";
+	for (int i = 0; i < (aux->size()/3 - 4); i++)  {
+		//cout << " " << i << "/";
 		for (float t = 0; t <= 1; t += 0.05) {
-			GLfloat x = (((-1 * pow(t, 3) + 3 * pow(t, 2) - 3 * t + 1)*aux->at(3 * i) +
+			float x = (((-1 * pow(t, 3) + 3 * pow(t, 2) - 3 * t + 1)*aux->at(3 * i) +
 				(3 * pow(t, 3) - 6 * pow(t, 2) + 0 * t + 4)*aux->at(3 * (i + 1)) +
 				(-3 * pow(t, 3) + 3 * pow(t, 2) + 3 * t + 1)*aux->at(3 * (i + 2)) +
 				(1 * pow(t, 3) + 0 * pow(t, 2) + 0 * t + 0)*aux->at(3 * (i + 3))) / 6);
 
-			GLfloat y = (((-1 * pow(t, 3) + 3 * pow(t, 2) - 3 * t + 1)*aux->at((3 * i)+1) +
+			float y = (((-1 * pow(t, 3) + 3 * pow(t, 2) - 3 * t + 1)*aux->at((3 * i)+1) +
 				(3 * pow(t, 3) - 6 * pow(t, 2) + 0 * t + 4)*aux->at((3 * (i + 1))+1) +
 				(-3 * pow(t, 3) + 3 * pow(t, 2) + 3 * t + 1)*aux->at((3 * (i + 2))+1) +
 				(1 * pow(t, 3) + 0 * pow(t, 2) + 0 * t + 0)*aux->at((3 * (i + 3)))+1) / 6);
@@ -351,12 +359,30 @@ void gerarCurva() {
 			curva->push_back(x);
 			curva->push_back(y);
 			curva->push_back(1.0); 
-			curva->push_back(1.0);
-			curva->push_back(1.0);
-			curva->push_back(1.0);
+			indic->push_back(1.0);
+			indic->push_back(1.0);
+			indic->push_back(1.0);
 		}
+		/*curva->push_back(650);
+		curva->push_back(150);
+		curva->push_back(1.0);
+		indic->push_back(1.0);
+		indic->push_back(1.0);
+		indic->push_back(1.0);
+		curva->push_back(340);
+		curva->push_back(220);
+		curva->push_back(1.0);
+		indic->push_back(1.0);
+		indic->push_back(1.0);
+		indic->push_back(1.0);*/
 	}
-
+	cout << curva->at(1);
+	cout << curva->at(4);
+	glBindVertexArray(VAO2);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO2);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*curva->size(), curva->data(), GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO4);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*indic->size(), indic->data(), GL_STATIC_DRAW);
 	
 }
 
